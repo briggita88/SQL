@@ -142,7 +142,7 @@ SELECT vips.last_name
 FROM vips
 INNER JOIN reservations
 ON vips.member_id=reservations.member_id
-WHERE r.welcome_rsvp = 1;
+WHERE reservations.welcome_rsvp = 1;
 
 
 --3. Multiple Joins -- List of VIPS and assoc_ type staying at the Hyatt Downtown
