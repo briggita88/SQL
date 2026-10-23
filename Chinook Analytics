@@ -1,0 +1,234 @@
+Final SQL Project using Chinook database.
+
+
+--1. Show Customers (their full names, customer ID, and country) who are not in the US. (Hint: != or <> can be used to say "is not equal to").
+
+SELECT customers.CustomerID
+, customers.FirstName
+, customers.LastName
+, customers.Country
+FROM chinook.customers
+WHERE Country <> 'USA'
+;
+
+--2. Show only the Customers from Brazil.
+
+SELECT customers.CustomerID
+, customers.FirstName
+, customers.LastName
+, customers.Country
+FROM chinook.customers
+WHERE Country = 'Brazil'
+;
+
+
+--3. Find the Invoices of customers who are from Brazil. The resulting table should show the customer's full name, Invoice ID, Date of the invoice, and billing country.
+
+SELECT customers.FirstName
+, customers.LastName
+, invoices.InvoiceId
+, invoices.InvoiceDate
+, invoices.BillingCountry
+FROM customers
+JOIN invoices
+ON customers.CustomerId = invoices.CustomerId
+WHERE customers.Country = 'Brazil'
+;
+
+--4. Show the Employees who are Sales Agents.
+
+SELECT employees.EmployeeId
+, employees.FirstName
+, employees.LastName
+, employees.Title
+FROM chinook.employees
+WHERE Title ='Sales Support Agent'
+;
+
+--5. Find a unique/distinct list of billing countries from the Invoice table.
+
+SELECT DISTINCT Invoices.BillingCountry
+FROM chinook.invoices
+ORDER BY Invoices.BillingCountry asc
+;
+
+--6. Provide a query that shows the invoices associated with each sales agent. The resulting table should include the Sales Agent's full name.
+
+SELECT invoices.InvoiceId
+, employees.EmployeeId
+, employees.FirstName
+, employees.LastName
+FROM chinook.employees
+JOIN chinook.customers
+ON employees.EmployeeId = customers.SupportRepId
+JOIN chinook.invoices
+ON customers.CustomerId = invoices.CustomerId
+WHERE employees.Title = 'Sales Support Agent'
+ORDER BY employees.LastName, employees.FirstName, invoices.InvoiceId
+;
+
+
+--7. Show the Invoice Total, Customer name, Country, and Sales Agent name for all invoices and customers.
+
+SELECT invoices.Total
+, customers.FirstName AS CustomerFirstName
+, customers.LastName AS CustomerLastName
+, customers.Country
+, employees.FirstName AS AgentFirstName
+, employees.LastName AS AgentLastName
+FROM chinook.invoices
+JOIN chinook.customers
+ON invoices.CustomerId = customers.CustomerId
+JOIN chinook.employees
+ON customers.SupportRepId = employees.EmployeeId
+ORDER BY customers.LastName, customers.FirstName
+;
+
+--8. How many Invoices were there in 2009?
+
+SELECT COUNT(InvoiceId)
+FROM chinook.invoices
+WHERE InvoiceDate LIKE '2009%'
+;
+
+--9. What are the total sales for 2009?
+
+SELECT SUM(total)
+FROM chinook.invoices
+WHERE InvoiceDate LIKE '2009%'
+;
+
+
+--10. Write a query that includes the purchased track name with each invoice line ID.
+
+SELECT
+    invoice_items.InvoiceLineId,
+    tracks.Name AS TrackName
+FROM chinook.invoice_items
+JOIN chinook.tracks
+    ON invoice_items.TrackId = tracks.TrackId
+ORDER BY invoice_items.InvoiceLineId
+;
+
+
+--11. Write a query that includes the purchased track name AND artist name with each invoice line ID.
+
+SELECT
+    invoice_items.InvoiceLineId,
+    tracks.Name AS TrackName,
+    artists.Name AS ArtistName
+FROM chinook.invoice_items
+JOIN chinook.tracks
+    ON invoice_items.TrackId = tracks.TrackId
+JOIN chinook.albums
+    ON tracks.AlbumId = albums.AlbumId
+JOIN chinook.artists
+    ON albums.ArtistId = artists.ArtistId
+ORDER BY invoice_items.InvoiceLineId
+;
+
+--12. Provide a query that shows all the Tracks, and include the Album name, Media type, and Genre.
+
+SELECT
+    tracks.Name AS TrackName,
+    albums.Title AS AlbumTitle,
+    media_types.Name AS MediaType,
+    genres.Name AS Genre
+FROM chinook.tracks
+LEFT JOIN chinook.albums
+    ON tracks.AlbumId = albums.AlbumId
+LEFT JOIN chinook.media_types
+    ON tracks.MediaTypeId = media_types.MediaTypeId
+LEFT JOIN chinook.genres
+    ON tracks.GenreId = genres.GenreId
+ORDER BY tracks.Name
+;
+
+
+--13. Show the total sales made by each sales agent.
+
+SELECT
+    employees.EmployeeId,
+    employees.FirstName,
+    employees.LastName,
+    SUM(invoices.Total) AS TotalSales
+FROM chinook.invoices
+JOIN chinook.customers
+    ON invoices.CustomerId = customers.CustomerId
+JOIN chinook.employees
+    ON customers.SupportRepId = employees.EmployeeId
+WHERE employees.Title = 'Sales Support Agent'
+GROUP BY
+    employees.EmployeeId,
+    employees.FirstName,
+    employees.LastName
+ORDER BY TotalSales DESC
+;
+
+--14. Which sales agent made the most dollars in sales in 2009?
+
+SELECT
+    employees.EmployeeId,
+    employees.FirstName,
+    employees.LastName,
+    SUM(invoices.Total) AS TotalSales
+FROM chinook.employees
+JOIN chinook.customers
+    ON employees.EmployeeId = customers.SupportRepId
+JOIN chinook.invoices
+    ON customers.CustomerId = invoices.CustomerId
+WHERE invoices.InvoiceDate LIKE  '2009%'
+GROUP BY
+    employees.EmployeeId,
+    employees.FirstName,
+    employees.LastName
+ORDER BY TotalSales DESC
+LIMIT 1
+;
+
+--15. Which 5 genres generate the most revenue?
+
+SELECT
+    genres.Name AS Genre,
+    SUM(invoice_items.UnitPrice * invoice_items.Quantity) AS TotalRevenue
+FROM chinook.invoice_items
+JOIN chinook.tracks
+    ON invoice_items.TrackId = tracks.TrackId
+JOIN chinook.genres
+    ON tracks.GenreId = genres.GenreId
+GROUP BY genres.Name
+ORDER BY TotalRevenue DESC
+LIMIT 5
+;
+
+--16. Which countries have the highest total sales, and how many customers does each have?
+
+SELECT
+    customers.Country,
+    SUM(invoices.Total) AS TotalSales,
+    COUNT(DISTINCT customers.CustomerId) AS CustomerCount
+FROM chinook.invoices
+JOIN chinook.customers
+    ON invoices.CustomerId = customers.CustomerId
+GROUP BY customers.Country
+ORDER BY TotalSales DESC
+;
+
+--.17  Which artist is purchased most by customers?
+
+SELECT
+    artists.Name AS ArtistName,
+    SUM(invoice_items.Quantity) AS TimesPurchased
+FROM chinook.invoice_items
+JOIN chinook.tracks
+    ON invoice_items.TrackId = tracks.TrackId
+JOIN chinook.albums
+    ON tracks.AlbumId = albums.AlbumId
+JOIN chinook.artists
+    ON albums.ArtistId = artists.ArtistId
+GROUP BY
+    artists.ArtistId,
+    artists.Name
+ORDER BY TimesPurchased DESC
+LIMIT 1
+;
